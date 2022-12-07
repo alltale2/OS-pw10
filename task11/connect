@@ -1,0 +1,96 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "shared.h"
+
+/* Shared memory creation */
+int shm_create(key_t shmkey, size_t size) {
+    int shmid;
+
+    shmid = shmget(shmkey, size,
+                   SHM_PERM | IPC_CREAT | IPC_EXCL);
+    if (shmid == -1) {
+        perror("\tshm_create invocation ERROR");
+        //return -1;
+        exit(1);
+    }
+
+    return shmid;
+}
+
+
+/* Shared memory opening */
+int shm_open(key_t shmkey) {
+    int shmid;
+
+    shmid = shmget(shmkey, 0, 0);
+
+    if (shmid == -1) {
+        perror("\tshm_open invocation ERROR");
+        exit(1);
+    }
+
+    return shmid;
+}
+
+
+/* Operation connect for shared memory */
+void * shm_connect(int shmid) {
+    void * shmbuf = NULL;
+
+    shmbuf = shmat(shmid, NULL, 0);
+    if (shmbuf == (void *) -1) {
+        perror("\tshm_connect invocation error");
+        exit(1);
+    }
+
+    return shmbuf;
+}
+
+
+/* Operation disconnect for shared memory */
+int shm_disconnect(void * shmbuf) {
+
+    if (shmdt(shmbuf) == -1) {
+        perror("\tshm_disconnect invocation error");
+        exit(1);
+    }
+
+    return 0;
+}
+
+
+/* Shared memory removing */
+int shm_del(int shmid) {
+
+    if (shmctl(shmid, IPC_RMID, NULL) == -1) {
+        perror("\tdel_shm invocation error");
+        return -1;
+    }
+
+    return 0;
+}
+
+/* Shared memory creator PID */
+pid_t shm_creator(int shmid) {
+    struct shmid_ds ds;
+
+    if (shmctl(shmid, IPC_STAT, &ds) == -1) {
+        perror("\tshm_creator invocation error");
+        exit(1);
+    }
+
+    return ds.shm_cpid;
+}
+
+/* Shared memory size in bytes */
+size_t shm_size(int shmid) {
+    struct shmid_ds ds;
+
+    if (shmctl(shmid, IPC_STAT, &ds) == -1) {
+        perror("\tshm_size invocation error");
+        exit(1);
+    }
+
+    return ds.shm_segsz;
+}
